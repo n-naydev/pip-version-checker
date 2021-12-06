@@ -1,7 +1,7 @@
-- id: pre-commit-check
-  name: pre-commit-check
-  description: 'pre-commit-checker: Check for outdated requirements'
-  entry: pip_version
+- id: pip-version-check
+  name: pip-version-check
+  description: 'pip-version-checker: Check for outdated requirements'
+  entry: pip_version_check
   language: python
   # minimum_pre_commit_version: 2.9.2
   require_serial: true

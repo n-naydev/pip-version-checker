@@ -1,51 +1,41 @@
-from typing import List
-import sys
 import requests
-from distutils.version import StrictVersion
-from pprint import pprint
-from dataclasses import dataclass
 from packaging.version import parse as parse_version
+from dparse.filetypes import requirements_txt
+from dparse import parse
+from dparse.dependencies import Dependency
 
 
-@dataclass
 class Requirement:
-    name: str
-    version: str
+    def __init__(self, dependency: Dependency) -> None:
+        self.name = dependency.full_name
+        self.specs = dependency.specs
+        all_pypi_versions = pypi_versions(self.name)
+        self.pypi_version = all_pypi_versions[0] if all_pypi_versions else None
 
-    @classmethod
-    def from_req_line(cls, req_line: str):
-        req = req_line.strip().split("==")
-        return cls(*req)
+    @property
+    def outdated(self):
+        return (
+            not self.specs.contains(self.pypi_version) if self.pypi_version else False
+        )
 
-
-def parse_line(line: str):
-    if "==" in line:
-        return Requirement.from_req_line(line)
-    else:
-        return None
+    def __repr__(self) -> str:
+        return (
+            f"{self.name}, requirement specs {self.specs}, "
+            f"pypi version {self.pypi_version}"
+        )
 
 
 def parse_requirements_file(filename: str = "requirements.txt"):
     with open(filename) as f:
-        return [parse_line(l) for l in f.readlines()]
+        deps = parse(f.read(), requirements_txt).dependencies
+    return [Requirement(d) for d in deps]
 
 
 def pypi_versions(package_name):
     url = f"https://pypi.org/pypi/{package_name}/json"
-    data = requests.get(url).json()
+    r = requests.get(url)
+    if r.status_code != 200:
+        return []
+    data = r.json()
     versions = data["releases"].keys()
     return sorted(versions, key=lambda v: parse_version(v), reverse=True)
-
-
-def get_requirements_versions(requirements: List[Requirement]):
-    return [(r, pypi_versions(r.name)[0]) for r in requirements if r]
-
-
-def get_outdated_packages(requirements: List[Requirement]):
-    req_versions = get_requirements_versions(requirements)
-    return [r for r in req_versions if r[0].version < r[1]]
-
-
-def main():
-    requirements_in_file = parse_requirements_file()
-    print(get_outdated_packages(requirements_in_file))
