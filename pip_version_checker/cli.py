@@ -17,4 +17,3 @@ def main(filename):
         print(f"No outdated packages found in {filename}", stdout)
     for op in outdated_packages:
         print(op)
-    exit(bool(outdated_packages))
