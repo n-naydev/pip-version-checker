@@ -4,7 +4,9 @@ import click
 from pip_version_checker.pip_version import parse_requirements_file
 
 
-@click.command()
+@click.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True)
+)
 @click.option(
     "--filename", default="requirements.txt", help="File with required python packages"
 )
